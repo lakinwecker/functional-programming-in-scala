@@ -11,9 +11,14 @@ object List {
     case Cons(_, tail) => tail
     case n => n
 
+  def setHead[A](list: List[A], newHead: A): List[A] = list match 
+    case Cons(_, tail) => Cons(newHead, tail)
+    case Nil => sys.error("Attempting to set the head of an empty list!")
+
 }
 object exercise {
   @main def test =
     val l = List(1,2,3,4)
-    println(List.tail(l))
+    val l2 = List.setHead(l, 5)
+    println(l2)
 }
