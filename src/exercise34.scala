@@ -22,9 +22,15 @@ object List {
       case Nil => Nil
       case Cons(_, tail) => drop(tail, num-1)
 
+  @annotation.tailrec
+  def drop2[A](list: List[A], num: Int): List[A] =
+    if num <= 0 then list
+    else drop2(tail(list), num-1)
+
 }
 object exercise {
   @main def test =
     val l = List(1,2,3,4)
     println(List.drop(l, 2))
+    println(List.drop2(l, 2))
 }

@@ -25,7 +25,7 @@ object List {
   @annotation.tailrec
   def dropWhile[A](list: List[A], pred: (A) => Boolean): List[A] = list match
       case Nil => Nil
-      case Cons(x, tail) if !pred(x) => list
+      case Cons(x, _) if !pred(x) => list
       case Cons(_, tail) => dropWhile(tail, pred)
 
 }
