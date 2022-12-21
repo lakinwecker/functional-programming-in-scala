@@ -1,3 +1,5 @@
+import scala.math.Numeric
+
 enum List[+A]:
   case Nil
   case Cons(head: A, tail: List[A])
@@ -33,20 +35,35 @@ object List {
       case Cons(x, Nil) => Nil
       case Cons(x, tail) => Cons(x, init(tail))
 
-  def foldRight[A,B](values: List[A], acc: B, f: (A, B) => B): B =
-    values match
+  def foldRight[A,B](as: List[A], acc: B, f: (A, B) => B): B =
+    as match
       case Nil => acc
       case Cons(x, xs) => f(x, foldRight(xs, acc, f))
 
   def length[A](as: List[A]): Int =
     foldRight(as, 0, (_, len) => len + 1)
+
+  @annotation.tailrec
+  def foldLeft[A,B](as: List[A], acc: B, f: (B, A) => B): B =
+    as match
+      case Nil => acc
+      case Cons(x, xs) => foldLeft(xs, f(acc, x), f)
+
+  def length2[A](as: List[A]): Int =
+    foldLeft(as, 0, (acc, _) => acc + 1)
+
+  def sum[A](as: List[A])(implicit num: Numeric[A]): A =
+    foldLeft(as, num.zero, num.NumericOps(_) + _)
+
+  def product[A](as: List[A])(implicit num: Numeric[A]): A =
+    foldLeft(as, num.one, num.NumericOps(_) * _)
+
 }
 
 object exercise {
   @main def test =
     val l = List(1,2,3,4)
-    println(List.length(l))
-
-    // Reproduces the list
-    println(List.foldRight(List(1, 2, 3), List.Nil: List[Int], List.Cons(_, _)))
+    println(List.length2(l))
+    println(List.sum(l))
+    println(List.product(l))
 }
