@@ -14,15 +14,15 @@ enum MyEither[+E, +A]:
     }
 
   def orElse[EE >: E, B >: A](b: => MyEither[EE, B]): MyEither[EE, B] =
-    this.left.flatMap[B, EE]((_) => b.left).left
-
-  def left: MyEither[A, E] = 
     this match {
-      case Right(w) => Left(w)
-      case Left(y) => Right(y)
+      case Right(a) => Right(a)
+      case Left(_) => b
     }
 
   def map2[EE >: E, B, C](that: MyEither[EE, B])(f: (A, B) => C): MyEither[EE, C] =
+    this.flatMap(a => that.map(b => f(a, b)))
+
+  def map2[EE >: E, B, C](that: MyEither[EE, B])(f: (A, B) => C): MyEither[Tuple2[EE, E], C] =
     this.flatMap(a => that.map(b => f(a, b)))
 
   //def map2_b[EE >: E, B, C](that: MyEither[EE, B])(f: (A, B) => C): MyEither[EE, C] =
@@ -35,6 +35,15 @@ object MyEither:
   def catchNonFatal[A](a: => A): MyEither[Throwable, A] =
     try Right(a)
     catch case NonFatal(t) => Left(t)
+
+  def sequence[E, A](as: List[MyEither[E, A]]): MyEither[E, List[A]] =
+    as.foldLeft[MyEither[E, List[A]]](Right(List[A]())){(l, e) => l.map2(e)((l, e) => l :+ e)}
+
+  def traverse[E, A, B](as: List[A])(f: A => MyEither[E, B]): MyEither[E, List[B]] =
+    as.foldLeft[MyEither[E, List[B]]](Right(List[B]())){(l, a) => l.map2(f(a))((l, e) => l :+ e)}
+
+  def sequence2[E, A](as: List[MyEither[E, A]]): MyEither[E, List[A]] =
+    traverse(as)(identity)
 
 
 object Example {
@@ -53,7 +62,7 @@ object Example {
     yield insuranceRateQuote(a, tickets)
 
   def insuranceRateQuote(a: Int, numberOfSpeedingTickets: Int) =
-    100.0 + a * 1.5 * scala.math.pow(numberOfSpeedingTickets,2)
+    100.0 + (100-a) * 1.5 * scala.math.pow(numberOfSpeedingTickets,2)
 
   @main
   def main =
@@ -61,30 +70,20 @@ object Example {
     val e2: MyEither[String, Int] = MyEither.Right(5)
     val e3: MyEither[String, Int] = MyEither.Right(10)
     println("-"*80)
-    println(e1.flatMap(canError))
-    println(e2.flatMap(canError))
-    println(e3.flatMap(canError))
+    println(MyEither.sequence(List(e1, e2, e3)))
+    println(MyEither.sequence(List(e2, e3)))
 
     println("-"*80)
-    println(e1.map(wontError))
-    println(e2.map(wontError))
-    println(e3.map(wontError))
+    println(MyEither.sequence2(List(e1, e2, e3)))
+    println(MyEither.sequence2(List(e2, e3)))
 
     println("-"*80)
-    println(e1.orElse(e2))
-    println(e2.orElse(e1))
-    println(e3.orElse(e1))
+    val e4: Tuple2[String, String] = ("lakin", "1")
+    val e5: Tuple2[String, String] = ("42", "1")
+    val e6: Tuple2[String, String] = ("28", "10")
+    println(MyEither.traverse(List(e4, e5, e6))((t) => parseInsuranceRateQuote(t._1, t._2)))
+    println(MyEither.traverse(List(e5, e6))((t) => parseInsuranceRateQuote(t._1, t._2)))
 
-    println("-"*80)
-    println(e1.map2(e2)(add))
-    println(e2.map2(e3)(add))
-    println(e3.map2(e1)(add))
 
-    println("-"*80)
-    println(parseInsuranceRateQuote("24", "0"))
-
-    println("-"*80)
-    println(e1)
-    println(e1.left)
 
 }
