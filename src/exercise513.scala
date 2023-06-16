@@ -28,10 +28,10 @@ enum LazyList[+A]:
   def headOption: Option[A] = foldRight[Option[A]](None)((a, b) => Some(a))
 
   def map[B](f: A => B): LazyList[B] = 
-    LazyList.unfold[B, LazyList[A]](this)({
+    LazyList.unfold[B, LazyList[A]](this){
       case Cons(h, t) => Some((f(h()), t()))
       case Empty => None
-    })
+    }
 
   def take(n: Int): LazyList[A] = 
     LazyList.unfold((0, this))({
@@ -46,18 +46,18 @@ enum LazyList[+A]:
     })
 
   def zipWith[B, C](b: LazyList[B], f: (A, B) => C) =
-    LazyList.unfold((this, b))({case (a, b) => (a, b) match {
+    LazyList.unfold((this, b))({
       case (Cons(ha, ta), Cons(hb, tb)) => Some(f(ha(), hb()), (ta(), tb()))
       case _ => None
-    }})
+    })
 
   def zipAll[B, C](b: LazyList[B]): LazyList[(Option[A], Option[B])] =
-    LazyList.unfold((this, b))({case (a, b) => (a, b) match {
+    LazyList.unfold((this, b))({
       case (Cons(ha, ta), Cons(hb, tb)) => Some((Some(ha()), Some(hb())), (ta(), tb()))
       case (Cons(ha, ta), Empty) => Some((Some(ha()), None), (ta(), Empty))
       case (Empty, Cons(hb, tb)) => Some((None, Some(hb())), (Empty, tb()))
       case _ => None
-    }})
+    })
 
   def filter[B](p: A => Boolean): LazyList[A] = foldRight[LazyList[A]](LazyList.Empty)((a, b) => if p(a) then LazyList.cons(a, b) else b)
 
