@@ -51,6 +51,8 @@ enum LazyList[+A]:
       case _ => None
     }})
 
+  def zip[B, C](b: LazyList[B]) = zipWith(b, (a, b) => (a, b))
+
   def zipAll[B, C](b: LazyList[B]): LazyList[(Option[A], Option[B])] =
     LazyList.unfold((this, b))({case (a, b) => (a, b) match {
       case (Cons(ha, ta), Cons(hb, tb)) => Some((Some(ha()), Some(hb())), (ta(), tb()))
@@ -66,6 +68,14 @@ enum LazyList[+A]:
       case (None, _) => false
     })
 
+  def startsWith2[A2 >: A](prefix: LazyList[A2]): Boolean =
+    this.take(prefix.toList.length).zipAll(prefix).forAll(_ == _)
+
+  def startsWith4[A2 >: A](prefix: LazyList[A2]): Boolean =
+    zipAll(prefix).take(prefix.toList.length).forAll(_ == _)
+
+  def startsWith3[A2 >: A](prefix: LazyList[A2]): Boolean =
+    zipAll(prefix).takeWhile((a, b) => b != None).forAll(_ == _)
 
   def filter[B](p: A => Boolean): LazyList[A] = foldRight[LazyList[A]](LazyList.Empty)((a, b) => if p(a) then LazyList.cons(a, b) else b)
 
@@ -104,4 +114,12 @@ object LazyList:
     println(LazyList(1, 2, 3).startsWith(LazyList(1, 2)))
     println(LazyList(1, 2, 3).startsWith(LazyList(2, 2)))
     println(LazyList(1, 2).startsWith(LazyList(1, 2, 3)))
+
+    println(LazyList(1, 2, 3).startsWith2(LazyList(1, 2)))
+    println(LazyList(1, 2, 3).startsWith2(LazyList(2, 2)))
+    println(LazyList(1, 2).startsWith2(LazyList(1, 2, 3)))
+
+    println(LazyList(1, 2, 3).startsWith3(LazyList(1, 2)))
+    println(LazyList(1, 2, 3).startsWith3(LazyList(2, 2)))
+    println(LazyList(1, 2).startsWith3(LazyList(1, 2, 3)))
 

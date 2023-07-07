@@ -84,7 +84,7 @@ enum LazyList[+A]:
   def scanRightNope[A2 >: A](a: A2)(f: (A2, A) => A2): LazyList[A2] =
     LazyList.continually(a).zipWith(this.tails, (a, l) => l.foldRight(a)((i, a) => f(a, i)))
 
-  def scanRight[A2 >: A](a: A2)(f: (A2, A) => A2): LazyList[A2] =
+  def scanRight[A2 >: A](a: A2)(f: (A2, => A) => A2): LazyList[A2] =
     LazyList.unfold(Option(this))(l => l match {
       case Some(Cons(ha, ta)) => {
         val tail = ta()

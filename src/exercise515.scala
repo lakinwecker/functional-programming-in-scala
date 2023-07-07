@@ -72,7 +72,7 @@ enum LazyList[+A]:
 
   def flatMap[B](f: A => LazyList[B]): LazyList[B] = foldRight[LazyList[B]](LazyList.Empty)((a, b) => f(a).append(b))
 
-  // NOTE: it feels like I am evaluating this WAY too often,rbut not sure how to avoid?
+  // NOTE: it feels like I am evaluating this WAY too often, but not sure how to avoid?
   // TODO: consider testing the above thought
   def tails: LazyList[LazyList[A]] =
     LazyList.unfold(Option(this))(l => l match {
@@ -81,7 +81,7 @@ enum LazyList[+A]:
         Some(Cons(ha, () => tail), Some(tail))
       }
       case _ => None
-    })
+    }).append(LazyList.empty)
 
 object LazyList:
   def cons[A](hd: => A, tl: => LazyList[A]): LazyList[A] =
