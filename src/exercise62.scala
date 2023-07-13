@@ -20,7 +20,7 @@ object exercise62 {
 
   def double(rng: RNG): (Double, RNG) =
     val (n, newRNG) = nonNegativeInt(rng)
-    (n.toDouble / Int.MaxValue.toDouble, newRNG)
+    (n.toDouble / (Int.MaxValue.toDouble+1.0), newRNG)
 
   @main
   def main() =

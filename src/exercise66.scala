@@ -1,9 +1,12 @@
 import scala.collection.immutable.List
 
-object exercise64 {
+object exercise65 {
+
 
   trait RNG:
     def nextInt: (Int, RNG)
+
+  type Rand[+A] = RNG => (A, RNG)
 
   case class SimpleRNG(seed: Long) extends RNG:
     def nextInt: (Int, RNG) =
@@ -11,6 +14,31 @@ object exercise64 {
       val nextRNG = SimpleRNG(newSeed)
       val n = (newSeed >>>16).toInt
       (n, nextRNG)
+
+  def unit[A](a: A): Rand[A] = rng => (a, rng)
+  def map[A, B](s: Rand[A])(f: A => B): Rand[B] =
+    rng =>
+      val (a, rng2) = s(rng)
+      (f(a), rng2)
+
+  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    rng =>
+      val (a, rng2) = ra(rng)
+      val (b, rng3) = rb(rng2)
+      (f(a, b), rng3)
+
+  def both[A, B](ra: Rand[A], rb: Rand[B]): Rand[(A, B)] =
+    map2(ra, rb)((_,_))
+
+  def sequence[A](rs: List[Rand[A]]): Rand[List[A]] =
+    rng => rs.foldLeft((List(), rng)){
+      case ((l, rng), f) => {
+        val (a, rng2) = f(rng)
+        (l ::: a, rng2)
+      }
+    }._1
+
+  val int: Rand[Int] = rng => rng.nextInt
 
   def nonNegativeInt(rng: RNG): (Int, RNG) =
     val (n1, newRNG) = rng.nextInt
@@ -20,18 +48,18 @@ object exercise64 {
       n1
     (positive, newRNG)
 
+  def nonNegativeEven: Rand[Int] =
+    map(nonNegativeInt)(i => i - (i % 2))
+
   def double(rng: RNG): (Double, RNG) =
     val (n, newRNG) = nonNegativeInt(rng)
     (n.toDouble / Int.MaxValue.toDouble, newRNG)
 
-  def intDouble(rng: RNG): ((Int, Double), RNG) =
-    val (i, newRNG) = rng.nextInt
-    val (d, newRNG2) = double(newRNG)
-    ((i, d), newRNG2)
+  val intDouble: Rand[(Int, Double)] =
+    both(int, double)
 
-  def doubleInt(rng: RNG): ((Double, Int), RNG) =
-    val ((i, d), newRNG) = intDouble(rng)
-    ((d, i), newRNG)
+  val doubleInt: Rand[(Double, Int)] =
+    both(double, int)
 
   def double3(rng: RNG): ((Double, Double, Double), RNG) =
     val (d1, newRNG1) = double(rng)
@@ -60,16 +88,14 @@ object exercise64 {
   @main
   def main() =
     val rng1 = SimpleRNG(42)
-    println("intsNonFunctional(3)")
-    val (l1, _) = intsNonFunctional(3)(rng1)
+    println("nonNegativeEven(3)")
+    val (l1, rng2) = nonNegativeEven(rng1)
     println(l1)
-    val (l2, rng2) = ints(3)(rng1)
-    println(l2)
 
-    println("intsNonFunctional(4)")
-    val (l3, _) = intsNonFunctional(4)(rng2)
+    val (l2, rng3) = intDouble(rng2)
+    println(l2)
+    val (l3, rng4) = doubleInt(rng3)
     println(l3)
-    val (l4, rng3) = ints(4)(rng2)
-    println(l4)
+
 
 }
