@@ -16,6 +16,7 @@ object exercise65 {
       (n, nextRNG)
 
   def unit[A](a: A): Rand[A] = rng => (a, rng)
+
   def map[A, B](s: Rand[A])(f: A => B): Rand[B] =
     rng =>
       val (a, rng2) = s(rng)
@@ -29,14 +30,6 @@ object exercise65 {
 
   def both[A, B](ra: Rand[A], rb: Rand[B]): Rand[(A, B)] =
     map2(ra, rb)((_,_))
-
-  def sequence[A](rs: List[Rand[A]]): Rand[List[A]] =
-    rng => rs.foldLeft((List[A](), rng)){
-      case ((l, rng), f) => {
-        val (a, rng2) = f(rng)
-        (l :+ a, rng2)
-      }
-    }
 
   val int: Rand[Int] = rng => rng.nextInt
 
@@ -67,23 +60,24 @@ object exercise65 {
     val (d3, newRNG3) = double(newRNG2)
     ((d1, d2, d3), newRNG3)
 
+  def sequence[A](rs: List[Rand[A]]): Rand[List[A]] =
+    rng => rs.foldLeft((List[A](), rng)){
+      case ((l, rng), f) => {
+        val (a, rng2) = f(rng)
+        (l :+ a, rng2)
+      }
+    }
+
   def ints(count: Int)(rng: RNG): (List[Int], RNG) =
     sequence[Int](List.fill(count)(rng => rng.nextInt))(rng)
 
   @main
   def main() =
     val rng1 = SimpleRNG(42)
-    println("nonNegativeEven(3)")
-    val (l1, rng2) = nonNegativeEven(rng1)
+    val (l1, rng2) = ints(5)(rng1)
     println(l1)
-
-    val (l2, rng3) = intDouble(rng2)
+    val (l2, rng3) = ints(5)(rng2)
     println(l2)
-    val (l3, rng4) = doubleInt(rng3)
-    println(l3)
-
-    val (l4, rng5) = ints(5)(rng4)
-    println(l4)
 
 
 }
